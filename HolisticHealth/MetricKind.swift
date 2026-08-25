@@ -41,18 +41,18 @@ enum MetricKind: String, CaseIterable, Hashable {
     /// and only ever compared against the person's own baseline elsewhere.
     static func format(_ value: Double, for kind: MetricKind) -> String {
         switch kind {
-        case .steps:               return "\(Int(value)) steps"
-        case .distance:             return String(format: "%.1f km", value / 1000)
-        case .exerciseMinutes:      return "\(Int(value)) min"
-        case .standMinutes:         return "\(Int(value)) min"
-        case .activeCalories:       return "\(Int(value)) kcal"
-        case .sleepHours:           return String(format: "%.1f hrs", value)
-        case .sleepEfficiency:      return "\(Int(value))%"
-        case .restingHeartRate:        return "\(Int(value)) bpm"
-        case .heartRateVariability:    return "\(Int(value)) ms"
-        case .vo2Max:                  return String(format: "%.1f mL/kg/min", value)
-        case .walkingHeartRateAverage: return "\(Int(value)) bpm"
-        case .heartRateRecovery:       return "\(Int(value)) bpm drop"
+        case .steps:               return "\(NumberFormat.int(value)) steps"
+        case .distance:             return "\(NumberFormat.decimal1(value / 1000)) km"
+        case .exerciseMinutes:      return "\(NumberFormat.int(value)) min"
+        case .standMinutes:         return "\(NumberFormat.int(value)) min"
+        case .activeCalories:       return "\(NumberFormat.int(value)) kcal"
+        case .sleepHours:           return "\(NumberFormat.decimal1(value)) hrs"
+        case .sleepEfficiency:      return "\(NumberFormat.int(value))%"
+        case .restingHeartRate:        return "\(NumberFormat.int(value)) bpm"
+        case .heartRateVariability:    return "\(NumberFormat.int(value)) ms"
+        case .vo2Max:                  return "\(NumberFormat.decimal1(value)) mL/kg/min"
+        case .walkingHeartRateAverage: return "\(NumberFormat.int(value)) bpm"
+        case .heartRateRecovery:       return "\(NumberFormat.int(value)) bpm drop"
         }
     }
 }

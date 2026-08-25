@@ -10,33 +10,43 @@ struct RMRSection: View {
     @State private var katchMcArdleEstimate: Double?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 14) {
             HStack {
-                Text("Resting energy").font(.title3.weight(.semibold))
-                InfoTooltip(text: "Both numbers are estimates, not clinical measurements. Apple's figure comes from a population-average formula based on age, sex, height, and weight \u{2014} it doesn't account for your actual muscle mass. It's shown here as your median over the last 7 completed days rather than today's running total, since that total only accrues through the day and would otherwise look artificially low each morning \u{2014} median rather than mean so one low-coverage day (Watch not worn, charging overnight) doesn't drag the figure down. The Katch-McArdle figure uses real lean-mass data from a smart scale when one's available, usually more accurate for anyone whose muscle mass differs from average \u{2014} but only as reliable as the scale's own reading, which shifts with hydration and other factors. Tap either number to make it the one used for Movement's Total calories.")
+                Image(systemName: "flame.fill")
+                    .foregroundStyle(.orange)
+                HStack(spacing: 2) {
+                    Text("Resting energy").font(.title3.weight(.semibold))
+                    InfoTooltip(text: "Both numbers are estimates, not clinical measurements. Apple's figure comes from a population-average formula (age, sex, height, weight) that doesn't account for your actual muscle mass. Shown as your median over the last 7 completed days rather than today's running total, so it doesn't read artificially low each morning \u{2014} median rather than mean so one low-coverage day doesn't skew it. Katch-McArdle uses real lean-mass data from a smart scale when available, usually more accurate, but only as reliable as that scale's own reading. Tap either number to use it for Movement's Total calories.")
+                }
+                Spacer()
             }
 
-            HStack(spacing: 24) {
-                estimateButton("Apple estimate", value: appleEstimate, method: .appleEstimate)
+            // Same two-column, 50/50 grid every other section (Heart &
+            // Vitals, Rest, Movement) uses for its stat cells — flexible
+            // columns are also what makes this card span full width
+            // instead of hugging its own content, matching the rest.
+            LazyVGrid(columns: [GridItem(.flexible(), alignment: .leading), GridItem(.flexible(), alignment: .leading)], alignment: .leading, spacing: 10) {
+                estimateCell("Apple estimate", value: appleEstimate, method: .appleEstimate)
                 if let katchMcArdleEstimate {
-                    estimateButton("Katch-McArdle", value: katchMcArdleEstimate, method: .katchMcArdle)
+                    estimateCell("Katch-McArdle", value: katchMcArdleEstimate, method: .katchMcArdle)
                 }
             }
         }
         .task { await refresh() }
     }
 
-    private func estimateButton(_ label: String, value: Double?, method: RestingEnergyMethod) -> some View {
+    private func estimateCell(_ label: String, value: Double?, method: RestingEnergyMethod) -> some View {
         let isSelected = restingEnergyPreference.value == method
         return Button {
             restingEnergyPreference.value = method
         } label: {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(label).font(.subheadline).foregroundStyle(isSelected ? .secondary : .tertiary)
-                Text(value.map { "\(Int($0)) kcal" } ?? "\u{2014}")
-                    .font(.subheadline.weight(isSelected ? .semibold : .regular))
+            VStack(alignment: .leading, spacing: 3) {
+                Text(label).statLabelStyle()
+                Text(value.map { "\(NumberFormat.int($0)) kcal" } ?? "\u{2014}")
+                    .font(isSelected ? .headline : .subheadline)
                     .foregroundStyle(isSelected ? .primary : .secondary)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .buttonStyle(.plain)
     }
@@ -56,5 +66,7 @@ struct RMRSection: View {
         if let mass = await leanMass {
             katchMcArdleEstimate = RMREngine.katchMcArdle(leanBodyMassKg: mass)
         }
+
+        SectionLoadCoordinator.shared.markLoaded("Resting energy")
     }
 }

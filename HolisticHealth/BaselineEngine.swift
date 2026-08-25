@@ -57,7 +57,7 @@ enum BaselineEngine {
         ].compactMap { $0 }
 
         guard !candidates.isEmpty else {
-            return "Getting to know your rhythm — check back in a week."
+            return "Learning your rhythm"
         }
 
         let notable = candidates
@@ -65,21 +65,26 @@ enum BaselineEngine {
             .sorted { $0.1.magnitude > $1.1.magnitude }
 
         guard let leading = notable.first else {
-            return "Steady, about the same as usual."
+            return "Same as usual"
         }
 
-        return "Steady, and \(clause(for: leading.0, direction: leading.1.direction))."
+        return clause(for: leading.0, direction: leading.1.direction)
     }
 
+    /// Short status fragments, not full sentences — this doubles as the
+    /// nav bar title (see `HomeView`), which measured out to roughly a
+    /// 32-character single-line budget alongside the toolbar's refresh
+    /// button before truncating. No trailing period, same as any other
+    /// nav title ("Settings", "Photos").
     private static func clause(for area: LifeArea, direction: TrendDirection) -> String {
         switch (area, direction) {
-        case (.movement, .up):   return "a bit more active than usual"
-        case (.movement, .down): return "a bit quieter than usual"
-        case (.sleep, .up):      return "sleeping more than usual"
-        case (.sleep, .down):    return "sleeping less than usual"
-        case (.heart, .up):      return "your resting heart rate has been a little higher than usual"
-        case (.heart, .down):    return "your resting heart rate has been a little lower than usual"
-        case (_, .steady):       return "about the same as usual"
+        case (.movement, .up):   return "More active"
+        case (.movement, .down): return "Quieter"
+        case (.sleep, .up):      return "Sleeping more"
+        case (.sleep, .down):    return "Sleeping less"
+        case (.heart, .up):      return "Higher heart rate"
+        case (.heart, .down):    return "Lower heart rate"
+        case (_, .steady):       return "Same as usual"
         }
     }
 }

@@ -19,11 +19,11 @@ final class HealthKitManager: ObservableObject {
     private var readTypes: Set<HKObjectType> {
         var types = Set<HKObjectType>()
         let identifiers: [HKQuantityTypeIdentifier] = [
-            .stepCount, .distanceWalkingRunning, .activeEnergyBurned,
+            .stepCount, .distanceWalkingRunning, .distanceCycling, .distanceSwimming, .activeEnergyBurned,
             .appleExerciseTime, .appleStandTime,
             .restingHeartRate, .heartRateVariabilitySDNN, .heartRate,
             .vo2Max, .walkingHeartRateAverage, .heartRateRecoveryOneMinute,
-            .basalEnergyBurned, .leanBodyMass
+            .basalEnergyBurned, .leanBodyMass, .walkingSpeed
         ]
         for identifier in identifiers {
             if let type = HKObjectType.quantityType(forIdentifier: identifier) {
@@ -61,7 +61,7 @@ final class HealthKitManager: ObservableObject {
         case .steps:
             return await fetchTodayTotal(for: .stepCount, unit: .count())
         case .distance:
-            return await fetchTodayTotal(for: .distanceWalkingRunning, unit: .meter())
+            return await fetchTodayDistanceTotal()
         case .exerciseMinutes:
             return await fetchTodayTotal(for: .appleExerciseTime, unit: .minute())
         case .standMinutes:
@@ -93,14 +93,85 @@ final class HealthKitManager: ObservableObject {
 
     // MARK: - Generic fetchers
 
-    func fetchTodayTotal(for identifier: HKQuantityTypeIdentifier, unit: HKUnit) async -> Double? {
+    /// "Distance" isn't one HealthKit quantity — walking/running (and
+    /// hiking, which shares the same identifier), cycling, and swimming
+    /// each write to their own type. Reading only
+    /// `distanceWalkingRunning` silently drops a day's cycling or
+    /// swimming distance instead of reporting it low. One shared list
+    /// here feeds both fetchers below through the multi-identifier
+    /// overloads of `fetchTodayTotal`/`fetchDailyTotals`, instead of
+    /// each duplicating the same three-identifier fan-out by hand.
+    /// `distanceIdentifier(for:)` further down encodes the same set a
+    /// second time in a different shape (activity type → single
+    /// identifier, for one workout's own distance) — keep that in sync
+    /// with this list if a new distance-producing type is ever added.
+    private static let distanceIdentifiers: [HKQuantityTypeIdentifier] = [
+        .distanceWalkingRunning, .distanceCycling, .distanceSwimming
+    ]
+
+    private func fetchTodayDistanceTotal() async -> Double? {
+        await fetchTodayTotal(for: Self.distanceIdentifiers, unit: .meter())
+    }
+
+    /// Same all-activity-types summing as `fetchTodayDistanceTotal`, one
+    /// value per day, for building a distance history/range/average.
+    func fetchDistanceHistory(days: Int) async -> [Double] {
+        await fetchDailyTotals(for: Self.distanceIdentifiers, unit: .meter(), days: days)
+    }
+
+    /// Sums `fetchTodayTotal` across several identifiers, fetched
+    /// concurrently — nil only if every identifier came back with no
+    /// data, same as the single-identifier version.
+    func fetchTodayTotal(for identifiers: [HKQuantityTypeIdentifier], unit: HKUnit) async -> Double? {
+        let values = await withTaskGroup(of: Double?.self) { group -> [Double?] in
+            for identifier in identifiers {
+                group.addTask { await self.fetchTodayTotal(for: identifier, unit: unit) }
+            }
+            var results: [Double?] = []
+            for await value in group { results.append(value) }
+            return results
+        }.compactMap { $0 }
+        guard !values.isEmpty else { return nil }
+        return values.reduce(0, +)
+    }
+
+    /// Sums `fetchDailyTotals` across several identifiers, day by day —
+    /// safe to add element-wise since every identifier's history is
+    /// zero-filled to exactly `days` entries (see `fetchDailyTotals`'s
+    /// own doc comment), never a shorter array.
+    func fetchDailyTotals(for identifiers: [HKQuantityTypeIdentifier], unit: HKUnit, days: Int,
+                           option: HKStatisticsOptions = .cumulativeSum) async -> [Double] {
+        let histories = await withTaskGroup(of: [Double].self) { group -> [[Double]] in
+            for identifier in identifiers {
+                group.addTask { await self.fetchDailyTotals(for: identifier, unit: unit, days: days, option: option) }
+            }
+            var results: [[Double]] = []
+            for await history in group { results.append(history) }
+            return results
+        }
+        guard let first = histories.first else { return [] }
+        return histories.dropFirst().reduce(first) { partial, next in zip(partial, next).map(+) }
+    }
+
+    /// `option` should be `.discreteAverage` for metrics HealthKit
+    /// samples many times a day (walking speed logs one reading per
+    /// walking bout, so a same-day average is the meaningful "today"
+    /// figure — unlike `fetchLatestSample`, which would just be the most
+    /// recent bout and could be stale from yesterday evening if today's
+    /// walking hasn't started yet) and `.cumulativeSum` (the default,
+    /// matching `fetchDailyTotals`'s own default) for everything else.
+    func fetchTodayTotal(for identifier: HKQuantityTypeIdentifier, unit: HKUnit,
+                          option: HKStatisticsOptions = .cumulativeSum) async -> Double? {
         guard let type = HKObjectType.quantityType(forIdentifier: identifier) else { return nil }
         let (start, end) = todayRange()
         let predicate = HKQuery.predicateForSamples(withStart: start, end: end, options: .strictStartDate)
 
         return await withCheckedContinuation { continuation in
-            let query = HKStatisticsQuery(quantityType: type, quantitySamplePredicate: predicate, options: .cumulativeSum) { _, result, _ in
-                continuation.resume(returning: result?.sumQuantity()?.doubleValue(for: unit))
+            let query = HKStatisticsQuery(quantityType: type, quantitySamplePredicate: predicate, options: option) { _, result, _ in
+                let value = option == .cumulativeSum
+                    ? result?.sumQuantity()?.doubleValue(for: unit)
+                    : result?.averageQuantity()?.doubleValue(for: unit)
+                continuation.resume(returning: value)
             }
             healthStore.execute(query)
         }
@@ -163,9 +234,28 @@ final class HealthKitManager: ObservableObject {
         let startDate: Date
         let duration: TimeInterval
         let totalEnergyBurned: Double?
+        /// Meters, from whichever distance quantity actually applies to
+        /// this activity type — nil for types HealthKit has no distance
+        /// quantity for (strength, yoga, HIIT, etc.), not a missing-data
+        /// gap to fill in.
+        let distance: Double?
 
         var isStrengthTraining: Bool {
             activityType == .traditionalStrengthTraining || activityType == .functionalStrengthTraining
+        }
+
+        /// Explicit allowlist of continuous-effort types where heart
+        /// rate zones are a meaningful read on session intensity — not
+        /// "everything but strength", since intermittent or low-
+        /// intensity types (yoga, core work) would show noise rather
+        /// than a genuine effort signal.
+        var isCardio: Bool {
+            switch activityType {
+            case .running, .walking, .cycling, .swimming, .hiking, .elliptical, .rowing, .highIntensityIntervalTraining:
+                return true
+            default:
+                return false
+            }
         }
 
         var typeName: String {
@@ -186,6 +276,18 @@ final class HealthKitManager: ObservableObject {
         }
     }
 
+    /// The distance quantity HealthKit actually tracks for a given
+    /// activity type — there's no single generic "distance" statistic,
+    /// and most types (strength, yoga, HIIT...) have none at all.
+    private nonisolated static func distanceIdentifier(for activityType: HKWorkoutActivityType) -> HKQuantityTypeIdentifier? {
+        switch activityType {
+        case .running, .walking, .hiking: return .distanceWalkingRunning
+        case .cycling: return .distanceCycling
+        case .swimming: return .distanceSwimming
+        default: return nil
+        }
+    }
+
     func fetchWorkouts(daysBack: Int) async -> [WorkoutSummary] {
         let calendar = Calendar.current
         let end = Date()
@@ -195,13 +297,17 @@ final class HealthKitManager: ObservableObject {
 
         return await withCheckedContinuation { continuation in
             let query = HKSampleQuery(sampleType: .workoutType(), predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [sort]) { _, samples, _ in
-                let workouts = (samples as? [HKWorkout])?.map { workout in
-                    WorkoutSummary(
+                let workouts = (samples as? [HKWorkout])?.map { workout -> WorkoutSummary in
+                    let distanceValue = Self.distanceIdentifier(for: workout.workoutActivityType).flatMap {
+                        workout.statistics(for: HKQuantityType($0))?.sumQuantity()?.doubleValue(for: .meter())
+                    }
+                    return WorkoutSummary(
                         activityType: workout.workoutActivityType,
                         startDate: workout.startDate,
                         duration: workout.duration,
                         totalEnergyBurned: workout.statistics(for: HKQuantityType(.activeEnergyBurned))?
-                            .sumQuantity()?.doubleValue(for: .kilocalorie())
+                            .sumQuantity()?.doubleValue(for: .kilocalorie()),
+                        distance: distanceValue
                     )
                 } ?? []
                 continuation.resume(returning: workouts)
@@ -210,39 +316,39 @@ final class HealthKitManager: ObservableObject {
         }
     }
 
-    /// Which of the last `days` days had at least one logged workout of
-    /// any kind — "Active days" on the Movement section.
-    func fetchActiveDayFlags(days: Int) async -> [Bool] {
-        let workouts = await fetchWorkouts(daysBack: days)
-        return dayFlags(from: workouts, days: days) { _ in true }
-    }
-
-    /// Same idea, restricted to resistance-tagged workouts — "Strength
-    /// days". Walking counts toward Active days but never Strength days;
-    /// these answer genuinely different research questions and
-    /// shouldn't be blended into one ambiguous count.
-    func fetchStrengthDayFlags(days: Int) async -> [Bool] {
-        let workouts = await fetchWorkouts(daysBack: days)
-        return dayFlags(from: workouts, days: days) { $0.isStrengthTraining }
-    }
-
     /// Total resistance-tagged workout duration over the window, in
-    /// minutes — feeds the Activity Index's strength component, which
-    /// scores weekly volume rather than the session count `fetchStrengthDayFlags`
-    /// answers for the Movement section's "Strength days" stat.
+    /// minutes — feeds both the Activity Index's strength component and
+    /// Movement's own "Strength" figure, which now shows weekly minutes
+    /// against a real target rather than a binary day count.
     func fetchStrengthMinutes(days: Int) async -> Double {
         let workouts = await fetchWorkouts(daysBack: days)
         return workouts.filter(\.isStrengthTraining).reduce(0) { $0 + $1.duration / 60 }
     }
 
-    private func dayFlags(from workouts: [WorkoutSummary], days: Int, matching: (WorkoutSummary) -> Bool) -> [Bool] {
+    /// Same total as `fetchStrengthMinutes`, broken out one value per
+    /// day over the last `days` days ending yesterday (matching
+    /// `fetchDailyTotals`'s convention) — so Movement's "Strength
+    /// minutes" stat can build a personal range the same way every
+    /// other stat in that grid already does.
+    func fetchStrengthMinutesHistory(days: Int) async -> [Double] {
         let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        let matchingDays = Set(workouts.filter(matching).map { calendar.startOfDay(for: $0.startDate) })
-        return (0..<days).reversed().map { offset in
-            guard let day = calendar.date(byAdding: .day, value: -offset, to: today) else { return false }
-            return matchingDays.contains(day)
+        let end = calendar.startOfDay(for: Date())
+        guard let start = calendar.date(byAdding: .day, value: -days, to: end) else { return [] }
+
+        let workouts = await fetchWorkouts(daysBack: days)
+        var minutesByDay: [Date: Double] = [:]
+        for workout in workouts where workout.isStrengthTraining {
+            let day = calendar.startOfDay(for: workout.startDate)
+            minutesByDay[day, default: 0] += workout.duration / 60
         }
+
+        var result: [Double] = []
+        var day = start
+        while day < end {
+            result.append(minutesByDay[day] ?? 0)
+            day = calendar.date(byAdding: .day, value: 1, to: day) ?? end
+        }
+        return result
     }
 
     /// A NEAT proxy: today's active energy minus the energy burned
@@ -434,6 +540,32 @@ final class HealthKitManager: ObservableObject {
         return allValues
     }
 
+    /// Timestamped heart rate samples for each workout, keyed by its
+    /// id — average HR and (for cardio types) zone breakdown per
+    /// session. One query per workout, same tradeoff as
+    /// `fetchWorkoutHeartRateSamples`: fine at the scale of a day's
+    /// workouts, not something to run over a long history.
+    func fetchHeartRateSamples(for workouts: [WorkoutSummary]) async -> [UUID: [(date: Date, bpm: Double)]] {
+        guard let hrType = HKObjectType.quantityType(forIdentifier: .heartRate) else { return [:] }
+        var result: [UUID: [(date: Date, bpm: Double)]] = [:]
+
+        for workout in workouts {
+            let end = workout.startDate.addingTimeInterval(workout.duration)
+            let predicate = HKQuery.predicateForSamples(withStart: workout.startDate, end: end, options: .strictStartDate)
+            let values: [(date: Date, bpm: Double)] = await withCheckedContinuation { continuation in
+                let query = HKSampleQuery(sampleType: hrType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: nil) { _, samples, _ in
+                    let values = (samples as? [HKQuantitySample])?.map {
+                        (date: $0.startDate, bpm: $0.quantity.doubleValue(for: HKUnit.count().unitDivided(by: .minute())))
+                    } ?? []
+                    continuation.resume(returning: values)
+                }
+                healthStore.execute(query)
+            }
+            result[workout.id] = values
+        }
+        return result
+    }
+
     /// Every heart rate sample recorded today, with timestamps — used
     /// to bucket minutes into zones and to detect VILPA bursts.
     func fetchTodayHeartRateSamples() async -> [(date: Date, bpm: Double)] {
@@ -491,6 +623,30 @@ final class HealthKitManager: ObservableObject {
             let query = HKSampleQuery(sampleType: hrvType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: nil) { _, samples, _ in
                 let values = (samples as? [HKQuantitySample])?.map {
                     (date: $0.startDate, ms: $0.quantity.doubleValue(for: .secondUnit(with: .milli)))
+                } ?? []
+                continuation.resume(returning: values)
+            }
+            healthStore.execute(query)
+        }
+    }
+
+    /// Raw VO2 max readings, one per qualifying outdoor walk/run —
+    /// sparse and irregular (Apple's algorithm only writes a new sample
+    /// every so often, not daily), which is exactly why this returns
+    /// actual sample dates rather than a `fetchDailyTotals`-style daily
+    /// bucket array: a trend line needs to skip the gaps between real
+    /// readings, not plot zero for every day nothing was recorded.
+    func fetchVO2MaxSamples(days: Int) async -> [(date: Date, value: Double)] {
+        guard let type = HKObjectType.quantityType(forIdentifier: .vo2Max) else { return [] }
+        let end = Date()
+        guard let start = Calendar.current.date(byAdding: .day, value: -days, to: end) else { return [] }
+        let predicate = HKQuery.predicateForSamples(withStart: start, end: end, options: .strictStartDate)
+        let sort = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)
+
+        return await withCheckedContinuation { continuation in
+            let query = HKSampleQuery(sampleType: type, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [sort]) { _, samples, _ in
+                let values = (samples as? [HKQuantitySample])?.map {
+                    (date: $0.startDate, value: $0.quantity.doubleValue(for: HKUnit(from: "mL/kg*min")))
                 } ?? []
                 continuation.resume(returning: values)
             }

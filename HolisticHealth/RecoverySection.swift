@@ -18,7 +18,7 @@ struct RecoverySection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
-                Image(systemName: "arrow.clockwise.heart")
+                Image(systemName: "figure.cooldown")
                     .foregroundStyle(.purple)
                 Text("Recovery").font(.title3.weight(.semibold))
                 Spacer()
@@ -30,28 +30,51 @@ struct RecoverySection: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 if let hrvTrend {
-                    Text("HRV: \(describe(hrvTrend, invert: false))")
+                    recoveryLine("HRV", describe(hrvTrend, invert: false))
                 }
                 if let rhrTrend {
-                    Text("Resting heart rate: \(describe(rhrTrend, invert: true))")
+                    recoveryLine("Resting heart rate", describe(rhrTrend, invert: true))
                 }
                 if let lastNightHours {
-                    Text("Last night: \(String(format: "%.1f hrs", lastNightHours))")
+                    recoveryLine("Last night", "\(NumberFormat.decimal1(lastNightHours)) hrs")
                 }
                 if let loadTrend {
-                    HStack(spacing: 4) {
-                        Text("This week's training load: \(describe(loadTrend, invert: false))")
+                    HStack(spacing: 2) {
+                        recoveryLine("This week's training load", describe(loadTrend, invert: false))
                         InfoTooltip(text: "Compares this week's total exercise minutes to your trailing 4-week average. Shown as information only \u{2014} the research behind training-load ratios is genuinely mixed, so this isn't a readiness verdict, just context for your own judgment.")
                     }
                 }
             }
-            .font(.subheadline)
             .foregroundStyle(.secondary)
         }
         .task { await refresh() }
     }
 
+    /// Metric name and its description share one font — same weight,
+    /// same color — so "HRV" carried no more visual weight than the
+    /// sentence describing it. Embedding a `Text` via string
+    /// interpolation (the `+` operator's replacement as of iOS 26)
+    /// keeps the two halves flowing and wrapping as one paragraph
+    /// (needed for the training-load line, which already wraps to two
+    /// lines) while still letting each half carry its own weight; both
+    /// inherit the same `.secondary` color from the parent, so only
+    /// weight — not color — carries the distinction, per request.
+    private func recoveryLine(_ label: String, _ description: String) -> Text {
+        Text("\(Text("\(label): ").fontWeight(.semibold))\(description)")
+            .font(.subheadline)
+    }
+
     private var synthesis: String {
+        // `hrvTrend?.direction == .down` reads `false` for both "trend
+        // is genuinely not down" and "no trend at all" — without this
+        // guard, a day with zero data falls through to the same
+        // reassuring default as a genuinely steady day, while the four
+        // bullet lines below (each gated on the same optionals) all
+        // correctly hide themselves, leaving an unsupported claim with
+        // nothing underneath it.
+        guard hrvTrend != nil || rhrTrend != nil || lastNightHours != nil || loadTrend != nil else {
+            return "Not enough data yet"
+        }
         let hrvLow = hrvTrend?.direction == .down
         let rhrHigh = rhrTrend?.direction == .up
         if hrvLow || rhrHigh {
@@ -84,5 +107,7 @@ struct RecoverySection: View {
         rhrTrend = BaselineEngine.trend(dailyValues: await rhrHistory)
         loadTrend = BaselineEngine.trend(dailyValues: await exerciseHistory)
         lastNightHours = (await sleepSummary)?.asleepHours
+
+        SectionLoadCoordinator.shared.markLoaded("Recovery")
     }
 }

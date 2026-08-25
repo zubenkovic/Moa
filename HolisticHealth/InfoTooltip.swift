@@ -37,11 +37,18 @@ struct InfoTooltip: View {
             Image(systemName: "questionmark.circle")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
+                .frame(width: 20, height: 20)
         }
         .buttonStyle(.plain)
+        // Expands only the *hit-test* region to the 44x44pt HIG minimum,
+        // without inflating the button's layout size — these icons sit
+        // inline next to labels, so growing the frame itself would blow
+        // up row height and spacing throughout every stat row that uses one.
+        .contentShape(Rectangle().inset(by: -12))
         .popover(isPresented: $isPresented) {
             Text(text)
                 .font(.subheadline)
+                .foregroundStyle(.primary)
                 .padding(Self.padding)
                 .frame(width: popoverSize.width, height: popoverSize.height)
                 .presentationCompactAdaptation(.popover)

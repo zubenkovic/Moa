@@ -2,47 +2,45 @@ import XCTest
 
 final class ActivityIndexEngineTests: XCTestCase {
 
-    // MARK: - strength component (weekly minutes / 60, capped at 100%)
+    // MARK: - raw pass-through (no percent-of-target, no capping, no scoring)
 
-    func testStrength_zeroMinutes_scoresZero() {
+    func testZeroInputs_passThroughAsZero() {
         let result = ActivityIndexEngine.compute(
-            sevenDayAvgSteps: 0, weeklyModerateMinutes: 0, weeklyStrengthMinutes: 0, sleepScoreAvg: 0
+            sevenDayAvgSteps: 0, weeklyModerateMinutes: 0, weeklyStrengthMinutes: 0, avgSleepHours: 0
         )
-        XCTAssertEqual(result.strengthPercent, 0)
-        XCTAssertEqual(result.strengthPercentRaw, 0)
+        XCTAssertEqual(result.avgSteps, 0)
+        XCTAssertEqual(result.weeklyMinutes, 0)
+        XCTAssertEqual(result.weeklyStrengthMinutes, 0)
+        XCTAssertEqual(result.avgSleepHours, 0)
     }
 
-    func testStrength_30Minutes_scoresHalfCredit() {
+    func testStrengthMinutes_passThroughUnchanged() {
         let result = ActivityIndexEngine.compute(
-            sevenDayAvgSteps: 0, weeklyModerateMinutes: 0, weeklyStrengthMinutes: 30, sleepScoreAvg: 0
+            sevenDayAvgSteps: 0, weeklyModerateMinutes: 0, weeklyStrengthMinutes: 30, avgSleepHours: 0
         )
-        XCTAssertEqual(result.strengthPercent, 50)
-        XCTAssertEqual(result.strengthPercentRaw, 50)
+        XCTAssertEqual(result.weeklyStrengthMinutes, 30)
     }
 
-    func testStrength_60Minutes_scoresFullCredit() {
+    // No capping: exceeding a target should show as the real number, not
+    // clamped — that's the whole point of dropping percent-of-target.
+    func testStrengthMinutes_exceedingTarget_isNotCapped() {
         let result = ActivityIndexEngine.compute(
-            sevenDayAvgSteps: 0, weeklyModerateMinutes: 0, weeklyStrengthMinutes: 60, sleepScoreAvg: 0
+            sevenDayAvgSteps: 0, weeklyModerateMinutes: 0, weeklyStrengthMinutes: 90, avgSleepHours: 0
         )
-        XCTAssertEqual(result.strengthPercent, 100)
-        XCTAssertEqual(result.strengthPercentRaw, 100)
+        XCTAssertEqual(result.weeklyStrengthMinutes, 90, "raw values pass through uncapped, even past the 60-minute target")
     }
 
-    func testStrength_90Minutes_cappedAt100ButRawExceedsIt() {
+    func testSteps_passThroughUnchanged() {
         let result = ActivityIndexEngine.compute(
-            sevenDayAvgSteps: 0, weeklyModerateMinutes: 0, weeklyStrengthMinutes: 90, sleepScoreAvg: 0
+            sevenDayAvgSteps: 12000, weeklyModerateMinutes: 0, weeklyStrengthMinutes: 0, avgSleepHours: 0
         )
-        XCTAssertEqual(result.strengthPercent, 100, "capped component must not exceed 100% even when the raw ratio does")
-        XCTAssertEqual(result.strengthPercentRaw, 150)
+        XCTAssertEqual(result.avgSteps, 12000)
     }
 
-    // A single long session hitting the weekly minutes target should
-    // score identically to several shorter ones totaling the same
-    // minutes — no per-session floor, by design.
-    func testStrength_noSessionLengthFloor_onlyTotalMinutesMatter() {
+    func testSleepHours_passThroughUnchanged_noScoring() {
         let result = ActivityIndexEngine.compute(
-            sevenDayAvgSteps: 0, weeklyModerateMinutes: 0, weeklyStrengthMinutes: 60, sleepScoreAvg: 0
+            sevenDayAvgSteps: 0, weeklyModerateMinutes: 0, weeklyStrengthMinutes: 0, avgSleepHours: 7.5
         )
-        XCTAssertEqual(result.strengthPercent, 100)
+        XCTAssertEqual(result.avgSleepHours, 7.5, "sleep is raw average duration now, not a computed 0\u{2013}100 score")
     }
 }

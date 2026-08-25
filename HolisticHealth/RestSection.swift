@@ -5,20 +5,15 @@ struct RestSection: View {
 
     @State private var asleepHours: Double?
     @State private var efficiency: Double?
-    @State private var sleepScore: Int?
     @State private var afterWorkout = false
     @State private var weekRegularity: SleepRegularity.Summary?
     @State private var monthRegularity: SleepRegularity.Summary?
     @State private var weekWakeRegularity: SleepRegularity.Summary?
     @State private var monthWakeRegularity: SleepRegularity.Summary?
     @State private var durationRange: (low: Double, high: Double)?
-    @State private var scoreRange: (low: Double, high: Double)?
     @State private var weekAvgDuration: Double?
-    @State private var weekAvgScore: Double?
     @State private var monthAvgDuration: Double?
-    @State private var monthAvgScore: Double?
     @State private var monthDurationRange: (low: Double, high: Double)?
-    @State private var monthScoreRange: (low: Double, high: Double)?
     @State private var lastNightBedStart: Date?
     @State private var lastNightWakeEnd: Date?
     @State private var weekSRI: SRIEngine.WindowResult?
@@ -39,40 +34,21 @@ struct RestSection: View {
                     .foregroundStyle(LifeArea.sleep.tint)
                 Text("Rest").font(.title3.weight(.semibold))
                 Spacer()
-                Text("Today").font(.subheadline).foregroundStyle(.tertiary)
+                Text("Today").statLabelStyle()
             }
 
-            LazyVGrid(columns: [GridItem(.flexible(), alignment: .leading), GridItem(.flexible(), alignment: .leading)], alignment: .leading, spacing: 14) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(asleepHours.map { String(format: "%.1f hrs", $0) } ?? "\u{2014}")
-                        .font(.title.weight(.medium))
-                    Text("Duration").font(.subheadline).foregroundStyle(.tertiary)
-                    if let asleepHours {
-                        LowHighIndicator(value: asleepHours, low: durationRange?.low ?? asleepHours, high: durationRange?.high ?? asleepHours)
-                    }
-                }
-
-                if let sleepScore {
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack(spacing: 4) {
-                            Text("\(sleepScore)/100")
-                                .font(.title.weight(.medium))
-                            InfoTooltip(text: "Weighted the same way Apple's own Sleep Score is: half from how long you slept, just under a third from how close your bedtime was to your usual, and the rest from how much you woke up overnight.")
-                        }
-                        Text("Score").font(.subheadline).foregroundStyle(.tertiary)
-                        LowHighIndicator(
-                            value: Double(sleepScore),
-                            low: scoreRange?.low ?? Double(sleepScore),
-                            high: scoreRange?.high ?? Double(sleepScore)
-                        )
-                    }
-                }
+            HStack(spacing: 2) {
+                Text(asleepHours.map { "Sleep \(NumberFormat.decimal1($0)) hrs" } ?? "Sleep \u{2014}")
+                    .headlineValueStyle()
+                InfoTooltip(text: Self.sleepDurationTooltip)
+            }
+            if let asleepHours {
+                LowHighIndicator(value: asleepHours, low: durationRange?.low ?? asleepHours, high: durationRange?.high ?? asleepHours, label: "Sleep duration")
             }
 
             if asleepHours == nil {
                 Text("No data yet")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .emptyStateCaptionStyle()
             } else {
                 LazyVGrid(columns: timeColumns, alignment: .leading, spacing: 10) {
                     timeCell("Bedtime", value: lastNightBedStart, range: nil)
@@ -81,36 +57,47 @@ struct RestSection: View {
             }
 
             if let efficiency {
-                Text("\(Int(efficiency))% efficiency")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                Text("\(NumberFormat.int(efficiency))% efficiency")
+                    .supportingTextStyle()
             }
 
             if afterWorkout {
                 HStack(spacing: 4) {
                     Image(systemName: "flame.fill")
-                        .font(.subheadline)
                     Text("Sleep may have been affected by a workout earlier")
-                        .font(.subheadline)
                 }
-                .foregroundStyle(.tertiary)
+                .supportingTextStyle()
             }
 
+            Divider()
             HStack {
-                Text("This week").font(.subheadline).foregroundStyle(.tertiary)
+                Text("This week").sectionHeadingStyle()
                 Spacer()
             }
-            durationScoreGrid(avgDuration: weekAvgDuration, durationRange: durationRange, avgScore: weekAvgScore, scoreRange: scoreRange)
+            LazyVGrid(columns: timeColumns, alignment: .leading, spacing: 10) {
+                statCell(
+                    "Avg. duration",
+                    display: weekAvgDuration.map { "\(NumberFormat.decimal1($0)) hrs" },
+                    range: durationRange.map { "\(NumberFormat.decimal1($0.low))\u{2013}\(NumberFormat.decimal1($0.high)) hrs" }
+                )
+                sriRow(result: weekSRI, range: weekSRIRange, showFallback: weekRegularity != nil || weekWakeRegularity != nil)
+            }
             timeRegularityGrid(bedtime: weekRegularity, wake: weekWakeRegularity)
-            sriRow(result: weekSRI, range: weekSRIRange, showFallback: weekRegularity != nil || weekWakeRegularity != nil)
 
+            Divider()
             HStack {
-                Text("This month").font(.subheadline).foregroundStyle(.tertiary)
+                Text("This month").sectionHeadingStyle()
                 Spacer()
             }
-            durationScoreGrid(avgDuration: monthAvgDuration, durationRange: monthDurationRange, avgScore: monthAvgScore, scoreRange: monthScoreRange)
+            LazyVGrid(columns: timeColumns, alignment: .leading, spacing: 10) {
+                statCell(
+                    "Avg. duration",
+                    display: monthAvgDuration.map { "\(NumberFormat.decimal1($0)) hrs" },
+                    range: monthDurationRange.map { "\(NumberFormat.decimal1($0.low))\u{2013}\(NumberFormat.decimal1($0.high)) hrs" }
+                )
+                sriRow(result: monthSRI, range: monthSRIRange, showFallback: monthRegularity != nil || monthWakeRegularity != nil)
+            }
             timeRegularityGrid(bedtime: monthRegularity, wake: monthWakeRegularity)
-            sriRow(result: monthSRI, range: monthSRIRange, showFallback: monthRegularity != nil || monthWakeRegularity != nil)
         }
         .task { await refresh() }
     }
@@ -120,32 +107,13 @@ struct RestSection: View {
     }
 
     @ViewBuilder
-    private func durationScoreGrid(avgDuration: Double?, durationRange: (low: Double, high: Double)?,
-                                    avgScore: Double?, scoreRange: (low: Double, high: Double)?) -> some View {
-        if avgDuration != nil || avgScore != nil {
-            LazyVGrid(columns: timeColumns, alignment: .leading, spacing: 10) {
-                statCell(
-                    "Avg. duration",
-                    display: avgDuration.map { String(format: "%.1f hrs", $0) },
-                    range: durationRange.map { String(format: "%.1f\u{2013}%.1f hrs", $0.low, $0.high) }
-                )
-                statCell(
-                    "Avg. score",
-                    display: avgScore.map { "\(Int($0.rounded()))/100" },
-                    range: scoreRange.map { "\(Int($0.low))\u{2013}\(Int($0.high))" }
-                )
-            }
-        }
-    }
-
-    @ViewBuilder
     private func statCell(_ label: String, display: String?, range: String?) -> some View {
         if let display {
             VStack(alignment: .leading, spacing: 2) {
-                Text(label).font(.subheadline).foregroundStyle(.tertiary)
-                Text(display).font(.subheadline.weight(.medium)).foregroundStyle(.secondary)
+                Text(label).statLabelStyle()
+                Text(display).statValueStyle()
                 if let range {
-                    Text(range).font(.subheadline).foregroundStyle(.tertiary)
+                    Text(range).supportingTextStyle()
                 }
             }
         }
@@ -161,39 +129,44 @@ struct RestSection: View {
         if let result {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 4) {
-                    Text(String(format: "%.0f", result.value))
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.secondary)
-                    Text("SRI").font(.subheadline).foregroundStyle(.tertiary)
-                    InfoTooltip(text: sriTooltip)
+                    Text(NumberFormat.int(result.value))
+                        .statValueStyle()
+                    HStack(spacing: 2) {
+                        Text("SRI").statLabelStyle()
+                        InfoTooltip(text: sriTooltip)
+                    }
                 }
                 LowHighIndicator(
                     value: result.value,
                     low: range?.low ?? result.value,
                     high: range?.high ?? result.value,
-                    width: 70, dotDiameter: 9
+                    width: 70, dotDiameter: 9,
+                    label: "Sleep Regularity Index"
                 )
                 Text("from \(result.nightsUsed) nights")
-                    .font(.subheadline)
-                    .foregroundStyle(.tertiary)
+                    .supportingTextStyle()
             }
         } else if showFallback {
             Text("Not enough nights yet")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .emptyStateCaptionStyle()
         }
     }
 
+    /// General education only \u{2014} the 7\u{2013}9 hour range and its
+    /// research basis, never a claim about what tonight's specific
+    /// number means for this person (the low-high indicator right below
+    /// this headline already handles that, against their own history).
+    private static let sleepDurationTooltip = "The 7\u{2013}9 hour range comes from the National Sleep Foundation's 2015 expert panel review (Hirshkowitz et al., Sleep Health), which found both shorter and longer durations linked to worse cardiovascular, metabolic, and cognitive outcomes. Shown as a general reference point, not a personalized target \u{2014} the indicator below still compares tonight against your own recent range."
+
     private var sriTooltip: String {
-        "Sleep Regularity Index (Phillips et al.) measures how similar your sleep schedule is from one night to the next, on a scale from -100 (a completely different schedule every night) to +100 (identical every night) \u{2014} a different lens from the median/earliest/latest times above, which describe when you sleep rather than how consistent that timing is. Some published research has found sleep regularity predicts mortality risk more strongly than sleep duration alone in certain analyses, using a threshold around 70 \u{2014} shown here only as context, not as a target: this number is compared only against your own recent history, the same as everything else in this app."
+        "Sleep Regularity Index (Phillips et al., 2017, Scientific Reports) measures how similar your sleep schedule is night to night, from -100 (completely different every night) to +100 (identical every night) \u{2014} a different lens from the median/earliest/latest times above, which describe when you sleep rather than how consistent it is. A 2024 UK Biobank study (Windred et al., Sleep) found sleep regularity predicted mortality risk more strongly than sleep duration. Shown here as context, not a target \u{2014} compared only against your own recent history, like everything else in this app."
     }
 
     @ViewBuilder
     private func timeRegularityGrid(bedtime: SleepRegularity.Summary?, wake: SleepRegularity.Summary?) -> some View {
         if bedtime == nil && wake == nil {
             Text("Not enough nights yet")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .emptyStateCaptionStyle()
         } else {
             LazyVGrid(columns: timeColumns, alignment: .leading, spacing: 10) {
                 timeCell("Bedtime", value: bedtime?.median, range: bedtime.map { ($0.earliest, $0.latest) })
@@ -206,12 +179,11 @@ struct RestSection: View {
     private func timeCell(_ label: String, value: Date?, range: (earliest: Date, latest: Date)?) -> some View {
         if let value {
             VStack(alignment: .leading, spacing: 2) {
-                Text(label).font(.subheadline).foregroundStyle(.tertiary)
-                Text(Self.timeFormatter.string(from: value)).font(.subheadline.weight(.medium)).foregroundStyle(.secondary)
+                Text(label).statLabelStyle()
+                Text(Self.timeFormatter.string(from: value)).statValueStyle()
                 if let range {
                     Text("\(Self.timeFormatter.string(from: range.earliest))\u{2013}\(Self.timeFormatter.string(from: range.latest))")
-                        .font(.subheadline)
-                        .foregroundStyle(.tertiary)
+                        .supportingTextStyle()
                 }
             }
         }
@@ -239,26 +211,6 @@ struct RestSection: View {
     private static func average(_ values: [Double]) -> Double? {
         guard !values.isEmpty else { return nil }
         return values.reduce(0, +) / Double(values.count)
-    }
-
-    /// Apple-style score per night (see SleepScoreEngine), judged
-    /// against `usualBedtime` — pass the window's own median so a
-    /// month's nights are judged against the month's usual bedtime,
-    /// not the week's.
-    private static func nightlyScores(nights: [HealthKitManager.SleepNightSummary], usualBedtime: Date?) -> [Double] {
-        nights.map { night -> Double in
-            let varianceMinutes: Double
-            if let usualBedtime, let bedStart = night.bedStart {
-                varianceMinutes = SleepRegularity.minutesApart(usualBedtime, bedStart)
-            } else {
-                varianceMinutes = 0
-            }
-            return Double(SleepScoreEngine.score(
-                asleepHours: night.asleepHours,
-                bedtimeVarianceMinutes: varianceMinutes,
-                interruptionMinutes: night.interruptionMinutes
-            ))
-        }
     }
 
     private struct SRIResult {
@@ -337,33 +289,9 @@ struct RestSection: View {
         weekSRIRange = sri.weekRange
         monthSRIRange = sri.monthRange
 
-        // Each window's nights are judged against that same window's own
-        // usual bedtime, matching how the rest of the app treats "usual"
-        // as window-relative rather than borrowing the week's figure for
-        // a month-long comparison.
-        let weekScores = Self.nightlyScores(nights: week, usualBedtime: weekRegularity?.median)
-        let monthScores = Self.nightlyScores(nights: month, usualBedtime: monthRegularity?.median)
-        scoreRange = Self.minMax(weekScores, filterPositive: false)
-        monthScoreRange = Self.minMax(monthScores, filterPositive: false)
-        weekAvgScore = Self.average(weekScores)
-        monthAvgScore = Self.average(monthScores)
-
         if let lastNight = month.last {
             lastNightBedStart = lastNight.bedStart
             lastNightWakeEnd = lastNight.wakeEnd
-
-            let varianceMinutes: Double
-            if let median = weekRegularity?.median, let bedStart = lastNight.bedStart {
-                varianceMinutes = SleepRegularity.minutesApart(median, bedStart)
-            } else {
-                varianceMinutes = 0
-            }
-
-            sleepScore = SleepScoreEngine.score(
-                asleepHours: lastNight.asleepHours,
-                bedtimeVarianceMinutes: varianceMinutes,
-                interruptionMinutes: lastNight.interruptionMinutes
-            )
 
             if let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: lastNight.date) {
                 afterWorkout = (await workouts).contains {
@@ -371,5 +299,7 @@ struct RestSection: View {
                 }
             }
         }
+
+        SectionLoadCoordinator.shared.markLoaded("Rest")
     }
 }

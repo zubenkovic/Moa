@@ -13,6 +13,13 @@ struct LowHighIndicator: View {
     let high: Double
     var width: CGFloat = 90
     var dotDiameter: CGFloat = 13
+    /// What this value represents (e.g. "Resting heart rate"), read by
+    /// VoiceOver ahead of the position summary below. Position is the
+    /// only signal this view carries visually (see the no-color-coding
+    /// note above) and it isn't echoed anywhere else in text at most call
+    /// sites, so without this, VoiceOver users get nothing telling them
+    /// where today sits relative to their own recent range.
+    var label: String? = nil
 
     /// Widened to always include `value`, even when the caller's
     /// low/high came from a trimmed range (dropping the single most
@@ -44,5 +51,12 @@ struct LowHighIndicator: View {
             }
         }
         .frame(width: width, height: max(dotDiameter, 3))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(label ?? "Compared to your recent range")
+        .accessibilityValue("\(Self.formatted(value)), typical range \(Self.formatted(effectiveLow)) to \(Self.formatted(effectiveHigh))")
+    }
+
+    private static func formatted(_ v: Double) -> String {
+        v.rounded() == v ? NumberFormat.int(v) : NumberFormat.decimal1(v)
     }
 }
