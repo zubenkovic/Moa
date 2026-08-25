@@ -116,14 +116,10 @@ struct HomeView: View {
         }
     }
 
-    // TODO: replace both placeholder URLs once the repo is published and
-    // the privacy policy is actually hosted (see the GitHub Pages plan
-    // discussed alongside this) — these are syntactically valid so the
-    // app builds and runs, but neither currently points anywhere real.
     private var footerLinks: some View {
         HStack(spacing: 16) {
-            Link("Privacy Policy", destination: URL(string: "https://USERNAME.github.io/HolisticHealth/privacy")!)
-            Link("View source on GitHub", destination: URL(string: "https://github.com/USERNAME/HolisticHealth")!)
+            Link("Privacy Policy", destination: URL(string: "https://github.com/zubenkovic/HolisticHealth/blob/main/PRIVACY.md")!)
+            Link("View source on GitHub", destination: URL(string: "https://github.com/zubenkovic/HolisticHealth")!)
         }
         .font(.footnote)
         .foregroundStyle(.secondary)
