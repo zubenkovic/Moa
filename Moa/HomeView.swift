@@ -118,8 +118,9 @@ struct HomeView: View {
 
     private var footerLinks: some View {
         HStack(spacing: 16) {
-            Link("Privacy Policy", destination: URL(string: "https://github.com/zubenkovic/HolisticHealth/blob/main/PRIVACY.md")!)
-            Link("View source on GitHub", destination: URL(string: "https://github.com/zubenkovic/HolisticHealth")!)
+            Link("Feedback", destination: URL(string: "mailto:getmoaapp@gmail.com?subject=Moa%20Feedback")!)
+            Link("Privacy Policy", destination: URL(string: "https://github.com/zubenkovic/Moa/blob/main/PRIVACY.md")!)
+            Link("GitHub", destination: URL(string: "https://github.com/zubenkovic/Moa")!)
         }
         .font(.footnote)
         .foregroundStyle(.secondary)

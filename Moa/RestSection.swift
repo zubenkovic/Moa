@@ -21,9 +21,19 @@ struct RestSection: View {
     @State private var weekSRIRange: (low: Double, high: Double)?
     @State private var monthSRIRange: (low: Double, high: Double)?
 
+    /// `.timeStyle = .short` rather than a hardcoded "h:mm a" — verified
+    /// directly that this alone (with no other config) already renders
+    /// "11:50 PM" in en_US but "23:50" in de_DE/en_GB/fr_FR/ja_JP, the
+    /// same locale-preferred-hour-cycle mechanism the device's own
+    /// "24-Hour Time" Settings toggle overrides, so this follows that
+    /// toggle the same way the system clock does — same reasoning as
+    /// `NumberFormat`'s `.autoupdatingCurrent` locale, just for time
+    /// instead of numbers.
     private static let timeFormatter: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.dateFormat = "h:mm a"
+        formatter.locale = .autoupdatingCurrent
+        formatter.dateStyle = .none
+        formatter.timeStyle = .short
         return formatter
     }()
 

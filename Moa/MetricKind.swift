@@ -42,7 +42,7 @@ enum MetricKind: String, CaseIterable, Hashable {
     static func format(_ value: Double, for kind: MetricKind) -> String {
         switch kind {
         case .steps:               return "\(NumberFormat.int(value)) steps"
-        case .distance:             return "\(NumberFormat.decimal1(value / 1000)) km"
+        case .distance:             return NumberFormat.distance(meters: value)
         case .exerciseMinutes:      return "\(NumberFormat.int(value)) min"
         case .standMinutes:         return "\(NumberFormat.int(value)) min"
         case .activeCalories:       return "\(NumberFormat.int(value)) kcal"

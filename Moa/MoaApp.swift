@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct HolisticHealthApp: App {
+struct MoaApp: App {
     var body: some Scene {
         WindowGroup {
             HomeView()

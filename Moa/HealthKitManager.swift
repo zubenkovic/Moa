@@ -456,7 +456,7 @@ final class HealthKitManager: ObservableObject {
 
                 var buckets: [Date: [HKCategorySample]] = [:]
                 for sample in categorySamples {
-                    let day = calendar.startOfDay(for: sample.endDate)
+                    let day = Self.sleepNightBucket(for: sample.endDate, calendar: calendar)
                     buckets[day, default: []].append(sample)
                 }
 
@@ -493,7 +493,22 @@ final class HealthKitManager: ObservableObject {
                         asleepHours: asleepSeconds / 3600,
                         interruptionMinutes: interruptionSeconds / 60,
                         bedStart: samples.first?.startDate,
-                        wakeEnd: asleep.last?.endDate
+                        // The whole session's latest end, from the
+                        // unfiltered `samples` — same source `bedStart`
+                        // already uses — not just `asleep`'s. A brief
+                        // awakening with no further asleep-classified
+                        // sample afterward (dozing, lying in bed, or
+                        // just not deep enough to register a stage)
+                        // would otherwise truncate wakeEnd at that
+                        // awakening instead of the actual time spent
+                        // getting up. This also avoids the previous
+                        // start-sorted-`.last` issue, since real
+                        // HealthKit sleep data can have overlapping
+                        // samples (iPhone- and Watch-logged stages for
+                        // the same night both present as separate
+                        // entries) that a start-date sort doesn't
+                        // reliably order by end time.
+                        wakeEnd: samples.map(\.endDate).max()
                     )
                 }.sorted { $0.date < $1.date }
 
@@ -501,6 +516,43 @@ final class HealthKitManager: ObservableObject {
             }
             healthStore.execute(query)
         }
+    }
+
+    /// Which night a sample belongs to, using a 6pm day boundary instead
+    /// of midnight — the same technique `SleepRegularity` already uses
+    /// for the identical cross-midnight problem. Plain
+    /// `calendar.startOfDay` bucketing looked right for a whole session
+    /// at a glance but silently merged two different nights whenever
+    /// bedtime was before midnight: a short sample from that session
+    /// ending at, say, 23:58 falls on the same calendar day as that
+    /// morning's *previous* night's wake-up, so both landed in one
+    /// bucket — and since 23:58 is numerically later than 8:34am same
+    /// day, picking the max end time inside that merged bucket
+    /// deterministically returned the next night's bedtime fragment as
+    /// "wakeEnd" instead of the real morning wake. Anchoring the
+    /// rollover at 6pm means a whole bedtime-to-wake session almost
+    /// never spans two buckets, since virtually no one's sleep both
+    /// starts and ends within the same 6pm-to-6pm window.
+    ///
+    /// `nonisolated`: this project defaults every type to `@MainActor`
+    /// isolation, but `HKSampleQuery`'s completion closure (where this
+    /// is called, in `fetchSleepNights` below) runs in a plain
+    /// synchronous, non-isolated HealthKit callback context — not the
+    /// main actor, and not `async`, so there's no way to hop onto it
+    /// there anyway. This function is pure (no shared state, no UI), so
+    /// it has no real reason to be actor-isolated in the first place.
+    private nonisolated static func sleepNightBucket(for date: Date, calendar: Calendar) -> Date {
+        let dayStart = calendar.startOfDay(for: date)
+        guard let sixPM = calendar.date(byAdding: .hour, value: 18, to: dayStart) else { return dayStart }
+        // On/after 6pm: an evening sample, belonging to the night that
+        // wakes tomorrow. Before 6pm: belongs to the night that began
+        // yesterday evening — same bucket label the original
+        // `startOfDay(for: endDate)` already used for a normal morning
+        // wake, so this only changes behavior for the evening case.
+        if date >= sixPM {
+            return calendar.date(byAdding: .day, value: 1, to: dayStart) ?? dayStart
+        }
+        return dayStart
     }
 
     // MARK: - Heart rate samples (for max HR resolution, zones, VILPA)

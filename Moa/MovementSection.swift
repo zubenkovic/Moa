@@ -85,30 +85,12 @@ struct MovementSection: View {
             if !todaysWorkouts.isEmpty {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Today's workouts").statLabelStyle()
-                    ForEach(todaysWorkouts) { workout in
-                        VStack(alignment: .leading, spacing: 2) {
-                            HStack {
-                                Text(workout.typeName)
-                                Spacer()
-                                Text("\(NumberFormat.int(workout.duration / 60)) min")
-                                if let cal = workout.totalEnergyBurned {
-                                    Text("\u{00B7} \(NumberFormat.int(cal)) kcal")
-                                }
-                            }
-                            .statValueStyle()
-                            .foregroundStyle(.secondary)
-
-                            if let avgHR = workoutDetails[workout.id]?.avgHR {
-                                Text("Avg HR \(NumberFormat.int(avgHR)) bpm")
-                                    .supportingTextStyle()
-                            }
-
-                            if let zones = workoutDetails[workout.id]?.zones, let summary = zoneSummary(zones) {
-                                Text(summary)
-                                    .supportingTextStyle()
-                            }
-                        }
+                    VStack(alignment: .leading, spacing: 10) {
+                        ForEach(todaysWorkouts) { todaysWorkoutRow($0) }
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(10)
+                    .background(Color.secondary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
                 }
             }
 
@@ -161,7 +143,7 @@ struct MovementSection: View {
                 statCell("Strength minutes", "\(NumberFormat.int(strengthMinutes)) min", value: strengthMinutes, range: strengthMinutesRange)
             }
             if let distance {
-                statCell("Distance", "\(NumberFormat.decimal1(distance / 1000)) km", value: distance, range: distanceRange)
+                statCell("Distance", NumberFormat.distance(meters: distance), value: distance, range: distanceRange)
             }
             if let activeCalories {
                 statCell("Active energy", "\(NumberFormat.int(activeCalories)) kcal", value: activeCalories, range: activeCaloriesRange)
@@ -296,7 +278,7 @@ struct MovementSection: View {
         if steps != nil || distance != nil || activeCalories != nil {
             LazyVGrid(columns: [GridItem(.flexible(), alignment: .leading), GridItem(.flexible(), alignment: .leading)], alignment: .leading, spacing: 10) {
                 if let steps { averageCell("Avg steps", NumberFormat.int(steps)) }
-                if let distance { averageCell("Total distance", "\(NumberFormat.decimal1(distance / 1000)) km") }
+                if let distance { averageCell("Total distance", NumberFormat.distance(meters: distance)) }
                 if let activeCalories { averageCell("Avg active energy", "\(NumberFormat.int(activeCalories)) kcal") }
             }
         }
@@ -332,6 +314,53 @@ struct MovementSection: View {
             .padding(10)
             .background(Color.secondary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
         }
+    }
+
+    /// Same icon-and-tinted-container treatment as `typeSummaryRow`
+    /// below (This week/This month) — icon + name alone on their own
+    /// line, stats together on the line under it, rather than crammed
+    /// onto the name's line — which is also how This week/month already
+    /// splits theirs. Distance-vs-kcal follows the same type-based rule
+    /// as `typeSummaryDetailLine`, just without the "Avg:" prefix: each
+    /// entry here is one real workout, not an average across several,
+    /// which is also why Avg HR and the zone breakdown are worth
+    /// keeping even though This week/month's summary doesn't carry them
+    /// — those two would blend across different days into a number that
+    /// doesn't describe any single thing that happened, where this is
+    /// the real reading from one specific workout.
+    private func todaysWorkoutRow(_ workout: HealthKitManager.WorkoutSummary) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 4) {
+                Image(systemName: Self.icon(for: workout.typeName))
+                    .font(.system(size: 14))
+                    .frame(width: 14, height: 14)
+                    .foregroundStyle(.secondary)
+                Text(workout.typeName)
+            }
+            .statValueStyle()
+            .foregroundStyle(.secondary)
+
+            Text(todaysWorkoutDetailLine(workout))
+                .supportingTextStyle()
+
+            if let zones = workoutDetails[workout.id]?.zones, let summary = zoneSummary(zones) {
+                Text(summary)
+                    .supportingTextStyle()
+            }
+        }
+    }
+
+    private func todaysWorkoutDetailLine(_ workout: HealthKitManager.WorkoutSummary) -> String {
+        var parts = ["\(NumberFormat.int(workout.duration / 60)) min"]
+        if let distance = workout.distance {
+            parts.append(NumberFormat.distance(meters: distance))
+        } else if let cal = workout.totalEnergyBurned {
+            parts.append("\(NumberFormat.int(cal)) kcal")
+        }
+        if let avgHR = workoutDetails[workout.id]?.avgHR {
+            parts.append("Avg HR \(NumberFormat.int(avgHR)) bpm")
+        }
+        return parts.joined(separator: " | ")
     }
 
     private func typeSummaryRow(_ summary: WorkoutTypeSummary) -> some View {
@@ -382,7 +411,7 @@ struct MovementSection: View {
     private func typeSummaryDetailLine(_ summary: WorkoutTypeSummary) -> String {
         let duration = "\(NumberFormat.int(summary.avgDurationMinutes)) min"
         if let avgDistanceMeters = summary.avgDistanceMeters {
-            return "Avg: \(duration) | \(NumberFormat.decimal1(avgDistanceMeters / 1000)) km"
+            return "Avg: \(duration) | \(NumberFormat.distance(meters: avgDistanceMeters))"
         }
         if let avgCalories = summary.avgCalories {
             return "Avg: \(duration) | \(NumberFormat.int(avgCalories)) kcal"

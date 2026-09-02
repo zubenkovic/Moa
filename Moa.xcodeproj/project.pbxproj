@@ -11,20 +11,20 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		30877432D1026706D7E805DA /* HolisticHealthTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = HolisticHealthTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		3A9068DA30361E0200A786CE /* HolisticHealth.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HolisticHealth.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		30877432D1026706D7E805DA /* MoaTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MoaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		3A9068DA30361E0200A786CE /* Moa.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Moa.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		50AF03B971722F244F58D669 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Platforms/iPhoneOS.platform/Developer/Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		3A9068DC30361E0200A786CE /* HolisticHealth */ = {
+		3A9068DC30361E0200A786CE /* Moa */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = HolisticHealth;
+			path = Moa;
 			sourceTree = "<group>";
 		};
-		846A32C3BB81E3C29B621792 /* HolisticHealthTests */ = {
+		846A32C3BB81E3C29B621792 /* MoaTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = HolisticHealthTests;
+			path = MoaTests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -59,8 +59,8 @@
 		3A9068D130361E0100A786CE = {
 			isa = PBXGroup;
 			children = (
-				3A9068DC30361E0200A786CE /* HolisticHealth */,
-				846A32C3BB81E3C29B621792 /* HolisticHealthTests */,
+				3A9068DC30361E0200A786CE /* Moa */,
+				846A32C3BB81E3C29B621792 /* MoaTests */,
 				3A9068DB30361E0200A786CE /* Products */,
 				3A8D4A2E30386BA600A06B30 /* Recovered References */,
 			);
@@ -69,8 +69,8 @@
 		3A9068DB30361E0200A786CE /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				3A9068DA30361E0200A786CE /* HolisticHealth.app */,
-				30877432D1026706D7E805DA /* HolisticHealthTests.xctest */,
+				3A9068DA30361E0200A786CE /* Moa.app */,
+				30877432D1026706D7E805DA /* MoaTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -78,9 +78,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		3A9068D930361E0100A786CE /* HolisticHealth */ = {
+		3A9068D930361E0100A786CE /* Moa */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 3A9068E530361E0200A786CE /* Build configuration list for PBXNativeTarget "HolisticHealth" */;
+			buildConfigurationList = 3A9068E530361E0200A786CE /* Build configuration list for PBXNativeTarget "Moa" */;
 			buildPhases = (
 				3A9068D630361E0100A786CE /* Sources */,
 				3A9068D730361E0100A786CE /* Frameworks */,
@@ -91,18 +91,18 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				3A9068DC30361E0200A786CE /* HolisticHealth */,
+				3A9068DC30361E0200A786CE /* Moa */,
 			);
-			name = HolisticHealth;
+			name = Moa;
 			packageProductDependencies = (
 			);
-			productName = HolisticHealth;
-			productReference = 3A9068DA30361E0200A786CE /* HolisticHealth.app */;
+			productName = Moa;
+			productReference = 3A9068DA30361E0200A786CE /* Moa.app */;
 			productType = "com.apple.product-type.application";
 		};
-		73C8EB5BB682575EC87A171A /* HolisticHealthTests */ = {
+		73C8EB5BB682575EC87A171A /* MoaTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 4F7FD633DBDDE131CA3766E4 /* Build configuration list for PBXNativeTarget "HolisticHealthTests" */;
+			buildConfigurationList = 4F7FD633DBDDE131CA3766E4 /* Build configuration list for PBXNativeTarget "MoaTests" */;
 			buildPhases = (
 				C826A6FCE48478DCB74F2134 /* Sources */,
 				5D2CCE8038A39D5E0853964B /* Frameworks */,
@@ -112,13 +112,13 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				846A32C3BB81E3C29B621792 /* HolisticHealthTests */,
+				846A32C3BB81E3C29B621792 /* MoaTests */,
 			);
-			name = HolisticHealthTests;
+			name = MoaTests;
 			packageProductDependencies = (
 			);
-			productName = HolisticHealthTests;
-			productReference = 30877432D1026706D7E805DA /* HolisticHealthTests.xctest */;
+			productName = MoaTests;
+			productReference = 30877432D1026706D7E805DA /* MoaTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
@@ -140,7 +140,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 3A9068D530361E0100A786CE /* Build configuration list for PBXProject "HolisticHealth" */;
+			buildConfigurationList = 3A9068D530361E0100A786CE /* Build configuration list for PBXProject "Moa" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -154,8 +154,8 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				3A9068D930361E0100A786CE /* HolisticHealth */,
-				73C8EB5BB682575EC87A171A /* HolisticHealthTests */,
+				3A9068D930361E0100A786CE /* Moa */,
+				73C8EB5BB682575EC87A171A /* MoaTests */,
 			);
 		};
 /* End PBXProject section */
@@ -241,7 +241,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -299,7 +299,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
@@ -315,25 +315,33 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = HolisticHealth/HolisticHealth.entitlements;
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_ENTITLEMENTS = Moa/Moa.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 9GUV29DU2F;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = GFMLPD8N5L;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Moa;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "We use your health data to show a gentler, more meaningful picture of how you're doing.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "Appelberg-Studio.HolisticHealth";
+				PRODUCT_BUNDLE_IDENTIFIER = com.zubenkovic.moa;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "Zubenkovic Moa";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
@@ -351,25 +359,33 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = HolisticHealth/HolisticHealth.entitlements;
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_ENTITLEMENTS = Moa/Moa.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 9GUV29DU2F;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = GFMLPD8N5L;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Moa;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "We use your health data to show a gentler, more meaningful picture of how you're doing.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "Appelberg-Studio.HolisticHealth";
+				PRODUCT_BUNDLE_IDENTIFIER = com.zubenkovic.moa;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "Zubenkovic Moa";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
@@ -386,7 +402,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 9GUV29DU2F;
+				DEVELOPMENT_TEAM = GFMLPD8N5L;
 				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -394,7 +410,7 @@
 					"@loader_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "Appelberg-Studio.HolisticHealthTests";
+				PRODUCT_BUNDLE_IDENTIFIER = com.zubenkovic.moa;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -409,7 +425,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 9GUV29DU2F;
+				DEVELOPMENT_TEAM = GFMLPD8N5L;
 				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -417,7 +433,7 @@
 					"@loader_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "Appelberg-Studio.HolisticHealthTests";
+				PRODUCT_BUNDLE_IDENTIFIER = com.zubenkovic.moa;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -428,7 +444,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		3A9068D530361E0100A786CE /* Build configuration list for PBXProject "HolisticHealth" */ = {
+		3A9068D530361E0100A786CE /* Build configuration list for PBXProject "Moa" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				3A9068E330361E0200A786CE /* Debug */,
@@ -437,7 +453,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		3A9068E530361E0200A786CE /* Build configuration list for PBXNativeTarget "HolisticHealth" */ = {
+		3A9068E530361E0200A786CE /* Build configuration list for PBXNativeTarget "Moa" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				3A9068E630361E0200A786CE /* Debug */,
@@ -446,7 +462,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		4F7FD633DBDDE131CA3766E4 /* Build configuration list for PBXNativeTarget "HolisticHealthTests" */ = {
+		4F7FD633DBDDE131CA3766E4 /* Build configuration list for PBXNativeTarget "MoaTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D58E72E310275DFF6C15C0C8 /* Debug */,
