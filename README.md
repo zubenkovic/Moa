@@ -1,4 +1,4 @@
-# HolisticHealth
+# Moa
 
 A SwiftUI + HealthKit dashboard that turns the data your iPhone and Apple Watch already collect into a small set of honest, research-grounded numbers — no scores that hide what's actually going on, no manual logging, no accounts.
 
@@ -9,7 +9,7 @@ A SwiftUI + HealthKit dashboard that turns the data your iPhone and Apple Watch 
 
 ## Why
 
-Most health apps either flatten everything into a single opaque "score," or bury you in raw charts with no context. HolisticHealth tries to sit in between: every number is shown next to what it actually means — its own target, its own recent range, or the research behind it — and nothing is averaged or capped away just to make the headline number look tidier.
+Most health apps either flatten everything into a single opaque "score," or bury you in raw charts with no context. Moa tries to sit in between: every number is shown next to what it actually means — its own target, its own recent range, or the research behind it — and nothing is averaged or capped away just to make the headline number look tidier.
 
 A few examples of that philosophy showing up in the code:
 
@@ -34,7 +34,7 @@ Every metric that cites research does so in an in-app tooltip, not just this REA
 
 ## Privacy
 
-HolisticHealth reads HealthKit data and nothing else. There is no networking code in the app, no analytics or crash-reporting SDK, no third-party dependencies, and no accounts. Everything is computed and stored on-device (a couple of small preferences live in `UserDefaults` — a manual max-heart-rate override, a resting-energy formula preference, and your daily check-ins). Nothing you do in this app is ever transmitted anywhere.
+Moa reads HealthKit data and nothing else. There is no networking code in the app, no analytics or crash-reporting SDK, no third-party dependencies, and no accounts. Everything is computed and stored on-device (a couple of small preferences live in `UserDefaults` — a manual max-heart-rate override, a resting-energy formula preference, and your daily check-ins). Nothing you do in this app is ever transmitted anywhere.
 
 Full policy: **[PRIVACY.md](PRIVACY.md)** — this is also what the app itself links to.
 
@@ -48,17 +48,17 @@ Full policy: **[PRIVACY.md](PRIVACY.md)** — this is also what the app itself l
 ## Getting started
 
 ```bash
-git clone https://github.com/zubenkovic/HolisticHealth.git
-cd HolisticHealth
-open HolisticHealth.xcodeproj
+git clone https://github.com/zubenkovic/Moa.git
+cd Moa
+open Moa.xcodeproj
 ```
 
-Select the `HolisticHealth` scheme, pick your device, and run. On first launch the app asks for HealthKit read permission for the data types listed above.
+Select the `Moa` scheme, pick your device, and run. On first launch the app asks for HealthKit read permission for the data types listed above.
 
 ## Running tests
 
 ```bash
-xcodebuild -project HolisticHealth.xcodeproj -scheme HolisticHealthTests \
+xcodebuild -project Moa.xcodeproj -scheme MoaTests \
   -destination 'platform=iOS Simulator,name=iPhone 17' test
 ```
 
@@ -77,7 +77,7 @@ Issues and pull requests are welcome. If you're proposing a change to how a metr
 
 ## Support
 
-If HolisticHealth is useful to you, you can support its development via [GitHub Sponsors](https://github.com/sponsors/zubenkovic).
+If Moa is useful to you, you can support its development via [GitHub Sponsors](https://github.com/sponsors/zubenkovic).
 
 ## License
 
