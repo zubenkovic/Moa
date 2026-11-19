@@ -116,11 +116,33 @@ struct HomeView: View {
         }
     }
 
+    /// Apple's Guideline 2.5.1 requires apps using HealthKit to say so
+    /// visibly in the interface itself — the system authorization
+    /// prompt and the privacy policy don't count. Kept here as a
+    /// permanent, always-findable line (not just the loading screen's
+    /// wording below, which only appears for a second or two) so
+    /// there's no risk of a reviewer landing on the app after it's
+    /// already loaded and finding no mention of it at all. Folded into
+    /// the footer, next to the other fine-print links, rather than
+    /// floating above the first card, since "reliably present
+    /// somewhere" satisfies the guideline just as well as "impossible
+    /// to miss," without competing with the actual content for
+    /// attention on every single launch.
     private var footerLinks: some View {
-        HStack(spacing: 16) {
-            Link("Feedback", destination: URL(string: "mailto:getmoaapp@gmail.com?subject=Moa%20Feedback")!)
-            Link("Privacy Policy", destination: URL(string: "https://github.com/zubenkovic/Moa/blob/main/PRIVACY.md")!)
-            Link("GitHub", destination: URL(string: "https://github.com/zubenkovic/Moa")!)
+        VStack(spacing: 8) {
+            // Underlined, not tinted — the links stay in the same
+            // muted gray as everything else in this footer rather than
+            // switching to the accent color, but still need some visual
+            // signal that they're tappable, which color alone was no
+            // longer providing once it got overridden to secondary.
+            HStack(spacing: 16) {
+                Link("Feedback", destination: URL(string: "mailto:getmoaapp@gmail.com?subject=Moa%20Feedback")!)
+                Link("Privacy Policy", destination: URL(string: "https://github.com/zubenkovic/Moa/blob/main/PRIVACY.md")!)
+                Link("GitHub", destination: URL(string: "https://github.com/zubenkovic/Moa")!)
+            }
+            .underline()
+
+            Text("Data from Apple Health")
         }
         .font(.footnote)
         .foregroundStyle(.secondary)
@@ -132,7 +154,7 @@ struct HomeView: View {
         VStack(spacing: 12) {
             ProgressView()
                 .controlSize(.large)
-            Text("Loading your data\u{2026}")
+            Text("Loading data from Apple Health\u{2026}")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
